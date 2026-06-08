@@ -14,6 +14,10 @@ class InfluxDBManager:
         """Initialize the InfluxDB client asynchronously."""
         self.client = InfluxDBClientAsync.from_env_properties()
         self.write_api = self.client.write_api()
+    @property
+    def is_connected(self) -> bool:
+        """Check if the InfluxDB client is connected."""
+        return self.client is not None
     async def close(self):
         """Close the InfluxDB client connection."""
         if self.client:
@@ -34,7 +38,7 @@ class InfluxDBManager:
             if not has_fields:
                 print(f"Skipping telemetry write for topic '{topic_name}': no supported fields found")
                 return
-
+            print(f"Writing telemetry data for topic '{topic_name}': {ros_message}")
             await self.write_api.write(bucket=INFLUXDB_BUCKET, record=point)
         except Exception as e:
             print(f"Error writing telemetry data: {e}")
