@@ -1,24 +1,44 @@
 import React, { useState, useEffect} from "react";
 
 const GpsWidget = () => {
-    const [gpsData, setGpsData] = useState({latitude: 0.0, longitude: 0.0 });
+    const [gpsData, setGpsData] = useState({
+        latitude: 0.0, 
+        longitude: 0.0,
+        altitude: 0.0, 
+        date: null, 
+        satelites: 0,
+        fix_quality: 0,
+        is_valid: false
+    });
     const [apiStatus, setApiStatus] = useState('Connecting...');
 
     useEffect(() => {
         const fetchGpsData = async () => {
             try {
-                const response = await fetch('/api/v1/gps/data');
+                const backendHost = 'localhost';
+                const response = await fetch('http://${backendHost}:3000/api/v1/gps/data');
                 if (!response.ok) {
                     throw new Error('HTTP error! Status: ${response.status}');
                 }
 
                 const data = await response.json();
 
-                if (data && data.latitude !== undefined && data.longitude !== undefined) {
-                    setGpsData({ latitude: data.latitude, longitude: data.longitude });
+                if (data && data.is_valid !== undefined && data.longitude !== undefined) {
+                    setGpsData({ 
+                        latitude: data.latitude, 
+                        longitude: data.longitude,
+                        altitude: data.altitude,     
+                        date: data.date, 
+                        satelites: data.satelites, 
+                        fix_quality: data.fix_quality, 
+                        is_valid: data.is_valid 
+                    });
                     setApiStatus('Connected');
                 } else {
-                    setApiStatus('Incorrect data format');
+                    if(data){
+                        setGpsData(prev => ({...prev, is_valid: false, date: data.date }))
+                    }
+                    setApiStatus('No GPS fix');
                 }
             } catch (error) {
                 console.error("Error getting GPS data from the API:", error);
@@ -30,11 +50,18 @@ const GpsWidget = () => {
 
         const intervalId = setInterval(fetchGpsData, 2000);
 
-        return clearInterval(intervalId);
+        return () => clearInterval(intervalId);
     }, []);
 
+    const formatTimeString = (dateString) =>{
+        if(!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
+    }
+
     return (
-        <div className="widget-container" style={{ alignItems: 'center', justifyContent: 'center' }}>            
+        // className="widget-container"
+        <div  style={{ alignItems: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column' }}>            
             <div style={{ fontSize: '18px', fontFamily: 'monospace', margin: '4px 0' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>latitude: </span>
                 <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
@@ -46,6 +73,27 @@ const GpsWidget = () => {
                 <span style={{ color: 'var(--text-secondary)' }}>longitude: </span>
                 <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
                     {gpsData.longitude.toFixed(6)}
+                </span>
+            </div>
+
+            <div style={{ fontSize: '18px', fontFamily: 'monospace', margin: '4px 0' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>altitude: </span>
+                <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                    {gpsData.altitude.toFixed(6)}
+                </span>
+            </div>
+
+            <div style={{ fontSize: '18px', fontFamily: 'monospace', margin: '4px 0' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>satelites: </span>
+                <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                    {gpsData.satelites}
+                </span>
+            </div>
+
+            <div style={{ fontSize: '18px', fontFamily: 'monospace', margin: '4px 0' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>timestamp: </span>
+                <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                    {formatTimeString(gpsData.date)}
                 </span>
             </div>
 
