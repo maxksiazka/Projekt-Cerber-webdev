@@ -5,8 +5,8 @@ const GpsWidget = () => {
         latitude: 0.0, 
         longitude: 0.0,
         altitude: 0.0, 
-        date: null, 
-        satelites: 0,
+        date: "N/A", 
+        satellites: 0,
         fix_quality: 0,
         is_valid: false
     });
@@ -15,30 +15,26 @@ const GpsWidget = () => {
     useEffect(() => {
         const fetchGpsData = async () => {
             try {
-                const backendHost = 'localhost';
-                const response = await fetch('http://${backendHost}:3000/api/v1/gps/data');
+                const response = await fetch('http://localhost:3000/api/v1/gps/data');
                 if (!response.ok) {
-                    throw new Error('HTTP error! Status: ${response.status}');
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
 
                 const data = await response.json();
 
-                if (data && data.is_valid !== undefined && data.longitude !== undefined) {
+                if (data && data.is_valid) {
                     setGpsData({ 
                         latitude: data.latitude, 
                         longitude: data.longitude,
                         altitude: data.altitude,     
                         date: data.date, 
-                        satelites: data.satelites, 
+                        satellites: data.satellites, 
                         fix_quality: data.fix_quality, 
                         is_valid: data.is_valid 
                     });
                     setApiStatus('Connected');
                 } else {
-                    if(data){
-                        setGpsData(prev => ({...prev, is_valid: false, date: data.date }))
-                    }
-                    setApiStatus('No GPS fix');
+                    setApiStatus('Invalid GPS fix');
                 }
             } catch (error) {
                 console.error("Error getting GPS data from the API:", error);
@@ -53,15 +49,8 @@ const GpsWidget = () => {
         return () => clearInterval(intervalId);
     }, []);
 
-    const formatTimeString = (dateString) =>{
-        if(!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
-    }
-
     return (
-        // className="widget-container"
-        <div  style={{ alignItems: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column' }}>            
+        <div className="widget-container" style={{ alignItems: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column' }}>            
             <div style={{ fontSize: '18px', fontFamily: 'monospace', margin: '4px 0' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>latitude: </span>
                 <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
@@ -84,16 +73,16 @@ const GpsWidget = () => {
             </div>
 
             <div style={{ fontSize: '18px', fontFamily: 'monospace', margin: '4px 0' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>satelites: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>satellites: </span>
                 <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                    {gpsData.satelites}
+                    {gpsData.satellites}
                 </span>
             </div>
 
             <div style={{ fontSize: '18px', fontFamily: 'monospace', margin: '4px 0' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>timestamp: </span>
                 <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                    {formatTimeString(gpsData.date)}
+                    {gpsData.date}
                 </span>
             </div>
 
